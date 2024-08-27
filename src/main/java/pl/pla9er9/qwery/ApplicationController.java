@@ -16,7 +16,7 @@ public class ApplicationController {
     @GetMapping("/search")
     public String[] search(
             @RequestParam String value,
-            @RequestParam(required = false, defaultValue = "4") int limit) {
+            @RequestParam(required = false, defaultValue = "10") int limit) {
 
         return trie.search(value, limit);
     }
