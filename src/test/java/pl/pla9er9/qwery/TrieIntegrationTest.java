@@ -33,8 +33,21 @@ public class TrieIntegrationTest {
 
         var result = trie.search("item", 2);
 
-        System.out.println(Arrays.toString(result));
         Assertions.assertArrayEquals(strings, result);
+    }
+
+    @Test
+    public void testDeepSearch() {
+        Trie trie = new Trie();
+        String[] strings = new String[]{"abc", "abc23", "abc1", "abc11", "abc111", "abc112", "abc12", "abc123", "abc124"};
+
+        for (String str : strings) {
+            trie.add(str);
+        }
+
+        var result = trie.search("a", 100);
+
+        System.out.println(Arrays.toString(result));
     }
 
     @Test

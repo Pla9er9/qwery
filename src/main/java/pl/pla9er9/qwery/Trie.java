@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class Trie {
@@ -26,7 +27,7 @@ public class Trie {
         add(str.substring(1), n);
     }
 
-    private  void add(String str, Node node) {
+    private void add(String str, Node node) {
         if (str.isEmpty()) {
             return;
         }
@@ -34,7 +35,7 @@ public class Trie {
         var c = str.charAt(0);
         var isLastCharacter = str.length() == 1;
         var childNodeOptional = node.getChildNodeByChar(c);
-        str =  str.substring(1);
+        str = str.substring(1);
 
         if (childNodeOptional.isPresent()) {
             var childNode = childNodeOptional.get();
@@ -52,7 +53,9 @@ public class Trie {
     public String[] getAll() {
         List<String> arr = new ArrayList<>();
         roots.forEach((k, v) -> {
-            arr.addAll(getAll(v,  String.valueOf(v.getChar())));
+            String nodeChar = String.valueOf(v.getChar());
+            List<String> fullString = getAll(v, nodeChar);
+            arr.addAll(fullString);
         });
 
         return arr.toArray(new String[0]);
@@ -65,18 +68,22 @@ public class Trie {
             arr.add(s);
         }
         n.getAllChildNodes().forEach((k, v) -> {
-            arr.addAll(getAll(v, s + v.getChar()));
+            var childNodes = getAll(v, s + v.getChar());
+            arr.addAll(childNodes);
         });
 
         return arr;
     }
 
+
+
+
+
+
     public String[] search(String str, int limit) {
         if (str == null || str.isEmpty()) {
-           return new String[]{};
+            return new String[]{};
         }
-
-        limit = Math.min(limit, 35);
 
         var char_ = str.charAt(0);
         var node = this.roots.get(char_);
@@ -84,12 +91,18 @@ public class Trie {
             return new String[]{};
         }
 
-        return search(node, str.substring(1),  String.valueOf(char_));
+        if (str.length() > 1) {
+            str = str.substring(1);
+        }
+
+        return search(node, str, String.valueOf(char_), limit);
     }
 
-    private String[] search(Node node, String str, String collected) {
+    private String[] search(Node node, String str, String collected, int limit) {
+        var results = new ArrayList<String>();
         var char_ = str.charAt(0);
         var nodeOptional = node.getChildNodeByChar(char_);
+
         if (nodeOptional.isEmpty()) {
             return new String[]{};
         }
@@ -97,65 +110,49 @@ public class Trie {
         var childNode = nodeOptional.get();
         if (str.length() > 1) {
             return search(
-                    childNode, str.substring(1), collected + childNode.getChar()
+                    childNode, str.substring(1), collected + childNode.getChar(), limit
             );
         }
 
         if (node.isStringEnding()) {
-            return new String[]{collected + node.getChar()};
+            results.add(collected + node.getChar());
+            limit -= 1;
         }
 
-        var results = new ArrayList<String>();
+        AtomicInteger limitAtomic = new AtomicInteger(limit + 1);
         childNode.getAllChildNodes().forEach((k, n) -> {
-            var v = getRestOfRecord(n, collected + char_);
-            if (v != null) {
-                results.add(v);
+            limitAtomic.decrementAndGet();
+            if (limitAtomic.get() == 0) {
+                return;
             }
+            System.out.println(collected);
+            results.addAll(List.of(search(n, str.substring(1), collected + childNode.getChar(), limitAtomic.get())));
         });
 
         return results.toArray(new String[0]);
     }
 
-
-//        if (str.length() == 1) {
-//            if (node.isStringEnding() && limit == 1) {
-//                return new String[]{orginal };
-//            }
-//
-//            node.getAllChildNodes().forEach((k, n) -> {
-//                results.add(getRestOfRecord(n, orginal));
-//            });
-//
-//            return results.toArray(new String[0]);
-//        } else {
-//            var nodeOptional = node.getChildNodeByChar(char_);
-//            if (nodeOptional.isEmpty()) {
-//                return new String[]{};
-//            }
-//            return search(nodeOptional.get(), str.substring(1), orginal, limit);
+//    private String getRestOfRecord(Node node, String collected) {
+//        if (node.isStringEnding()) {
+//            return collected;
 //        }
-
-    private String getRestOfRecord(Node node, String collected) {
-        if (node.isStringEnding()) {
-            return collected + node.getChar();
-        }
-
-        var childNodes = node.getAllChildNodes().values();
-        var firstChildOptional = childNodes.stream().findFirst();
-
-        if (firstChildOptional.isEmpty()) {
-            return null;
-        }
-
-        var firstChild = firstChildOptional.get();
-
-        return getRestOfRecord(firstChild, collected + firstChild.getChar());
-    }
+//
+//        var childNodes = node.getAllChildNodes().values();
+//        var firstChildOptional = childNodes.stream().findFirst();
+//
+//        if (firstChildOptional.isEmpty()) {
+//            return null;
+//        }
+//
+//        var firstChild = firstChildOptional.get();
+//
+//        return getRestOfRecord(firstChild, collected + firstChild.getChar());
+//    }
 
 
-    /**
-     * @return if string was found and deleted
-     */
+
+
+
     public void delete(String str) {
         if (str == null || str.isEmpty()) {
             return;
@@ -171,7 +168,7 @@ public class Trie {
     }
 
     private boolean delete(String str, Node node) {
-        if (str.length() == 0) {
+        if (str.isEmpty()) {
             return false;
         }
 
@@ -189,7 +186,7 @@ public class Trie {
             }
         }
 
-        if (node.getAllChildNodes().size() == 0) {
+        if (node.getAllChildNodes().isEmpty()) {
             return true;
         } else {
             if (str.length() == 1) {
@@ -203,15 +200,4 @@ public class Trie {
         this.roots.clear();
     }
 
-//    public void print() {
-//        print(this.roots);
-//        System.out.println();
-//    }
-//
-//    private void print(Map<Character, Node> map) {
-//        map.forEach((k, v) -> {
-//            System.out.print(v.getChar());
-//            print(v.getAllChildNodes());
-//        });
-//    }
 }
