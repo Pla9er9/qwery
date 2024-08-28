@@ -40,14 +40,32 @@ public class TrieIntegrationTest {
     public void testDeepSearch() {
         Trie trie = new Trie();
         String[] strings = new String[]{"abc", "abc23", "abc1", "abc11", "abc111", "abc112", "abc12", "abc123", "abc124"};
+        Arrays.sort(strings);
 
         for (String str : strings) {
             trie.add(str);
         }
 
         var result = trie.search("a", 100);
+        Arrays.sort(result);
 
-        System.out.println(Arrays.toString(result));
+        Assertions.assertArrayEquals(strings, result);
+    }
+
+    @Test
+    public void testSearchLimit() {
+        Trie trie = new Trie();
+        String[] strings = new String[]{"abc", "abc23", "abc1", "abc11", "abc111", "abc112", "abc12", "abc123", "abc124"};
+        Arrays.sort(strings);
+
+        for (String str : strings) {
+            trie.add(str);
+        }
+
+        for (int limit = 0; limit < strings.length; limit++) {
+            var result = trie.search("a", limit);
+            Assertions.assertEquals(limit, result.length);
+        }
     }
 
     @Test
