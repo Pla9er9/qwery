@@ -75,11 +75,6 @@ public class Trie {
         return arr;
     }
 
-
-
-
-
-
     public String[] search(String str, int limit) {
         if (str == null || str.isEmpty()) {
             return new String[]{};
@@ -104,7 +99,8 @@ public class Trie {
         var nodeOptional = node.getChildNodeByChar(char_);
 
         if (nodeOptional.isEmpty()) {
-            return new String[]{};
+            var rest = getRecordsFromChildNodes(node, collected, limit);
+            return rest.toArray(new String[0]);
         }
 
         var childNode = nodeOptional.get();
@@ -114,44 +110,38 @@ public class Trie {
             );
         }
 
-        if (node.isStringEnding()) {
+        if (childNode.isStringEnding()) {
             results.add(collected + node.getChar());
             limit -= 1;
         }
 
-        AtomicInteger limitAtomic = new AtomicInteger(limit + 1);
-        childNode.getAllChildNodes().forEach((k, n) -> {
-            limitAtomic.decrementAndGet();
-            if (limitAtomic.get() == 0) {
-                return;
-            }
-            System.out.println(collected);
-            results.addAll(List.of(search(n, str.substring(1), collected + childNode.getChar(), limitAtomic.get())));
-        });
+        var rest = getRecordsFromChildNodes(childNode, collected + childNode.getChar(), limit);
+        results.addAll(rest);
 
         return results.toArray(new String[0]);
     }
 
-//    private String getRestOfRecord(Node node, String collected) {
-//        if (node.isStringEnding()) {
-//            return collected;
-//        }
-//
-//        var childNodes = node.getAllChildNodes().values();
-//        var firstChildOptional = childNodes.stream().findFirst();
-//
-//        if (firstChildOptional.isEmpty()) {
-//            return null;
-//        }
-//
-//        var firstChild = firstChildOptional.get();
-//
-//        return getRestOfRecord(firstChild, collected + firstChild.getChar());
-//    }
+    private List<String> getRecordsFromChildNodes(Node node, String collected, int limit) {
+        var limitAtomic = new AtomicInteger(limit);
+        var result = new ArrayList<String>();
 
+        node.getAllChildNodes().forEach((k, v) -> {
+            if (limitAtomic.get() <= 0) {
+                return;
+            }
 
+            if (v.isStringEnding()) {
+                result.add(collected + v.getChar());
+                limitAtomic.decrementAndGet();
+            }
 
+            var found = getRecordsFromChildNodes(v, collected + v.getChar(), limitAtomic.get());
+            result.addAll(found);
+            limitAtomic.updateAndGet(e -> e - found.size());
+        });
 
+        return result;
+    }
 
     public void delete(String str) {
         if (str == null || str.isEmpty()) {
@@ -199,5 +189,4 @@ public class Trie {
     public void deleteAll() {
         this.roots.clear();
     }
-
 }
