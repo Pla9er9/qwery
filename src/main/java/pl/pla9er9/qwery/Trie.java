@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Trie {
     private final Map<Character, Node> roots = new ConcurrentHashMap<>();
 
-    public void add(String str) {
+    public void add(String str, Object value) {
         if (str == null || str.isEmpty()) {
             return;
         }
@@ -19,15 +19,15 @@ public class Trie {
         Node n = roots.get(c);
 
         if (n == null) {
-            Node newNode = new Node(c, str.length() == 1);
+            Node newNode = new Node(c, value, str.length() == 1);
             roots.put(c, newNode);
             n = newNode;
         }
 
-        add(str.substring(1), n);
+        add(str.substring(1), n, value);
     }
 
-    private void add(String str, Node node) {
+    private void add(String str, Node node, Object value) {
         if (str.isEmpty()) {
             return;
         }
@@ -41,31 +41,33 @@ public class Trie {
             var childNode = childNodeOptional.get();
             if (isLastCharacter) {
                 childNode.setStringEnding(true);
+                childNode.setValue(value);
             }
-            add(str, childNode);
+            add(str, childNode, value);
         } else {
-            var newNode = new Node(c, isLastCharacter);
+            var newNode = new Node(c, value, isLastCharacter);
             node.addChildNode(newNode);
-            add(str, newNode);
+            add(str, newNode, value);
         }
     }
 
-    public String[] getAll() {
-        List<String> arr = new ArrayList<>();
+    public Record[] getAll() {
+        List<Record> arr = new ArrayList<>();
         roots.forEach((k, v) -> {
             String nodeChar = String.valueOf(v.getChar());
-            List<String> fullString = getAll(v, nodeChar);
-            arr.addAll(fullString);
+            List<Record> records = getAll(v, nodeChar);
+            arr.addAll(records);
         });
 
-        return arr.toArray(new String[0]);
+        return arr.toArray(new Record[0]);
     }
 
-    private List<String> getAll(Node n, String s) {
-        List<String> arr = new ArrayList<>();
+    private List<Record> getAll(Node n, String s) {
+        List<Record> arr = new ArrayList<>();
 
         if (n.isStringEnding()) {
-            arr.add(s);
+            var record = new Record(s, n.getValue());
+            arr.add(record);
         }
         n.getAllChildNodes().forEach((k, v) -> {
             var childNodes = getAll(v, s + v.getChar());
@@ -75,15 +77,15 @@ public class Trie {
         return arr;
     }
 
-    public String[] search(String str, int limit) {
+    public Record[] search(String str, int limit) {
         if (str == null || str.isEmpty()) {
-            return new String[]{};
+            return new Record[]{};
         }
 
         var char_ = str.charAt(0);
         var node = this.roots.get(char_);
         if (node == null) {
-            return new String[]{};
+            return new Record[]{};
         }
 
         if (str.length() > 1) {
@@ -93,14 +95,14 @@ public class Trie {
         return search(node, str, String.valueOf(char_), limit);
     }
 
-    private String[] search(Node node, String str, String collected, int limit) {
-        var results = new ArrayList<String>();
+    private Record[] search(Node node, String str, String collected, int limit) {
+        var results = new ArrayList<Record>();
         var char_ = str.charAt(0);
         var nodeOptional = node.getChildNodeByChar(char_);
 
         if (nodeOptional.isEmpty()) {
             var rest = getRecordsFromChildNodes(node, collected, limit);
-            return rest.toArray(new String[0]);
+            return rest.toArray(new Record[0]);
         }
 
         var childNode = nodeOptional.get();
@@ -111,19 +113,20 @@ public class Trie {
         }
 
         if (childNode.isStringEnding()) {
-            results.add(collected + node.getChar());
+            var record = new Record(collected + node.getChar(), node.getValue());
+            results.add(record);
             limit -= 1;
         }
 
         var rest = getRecordsFromChildNodes(childNode, collected + childNode.getChar(), limit);
         results.addAll(rest);
 
-        return results.toArray(new String[0]);
+        return results.toArray(new Record[0]);
     }
 
-    private List<String> getRecordsFromChildNodes(Node node, String collected, int limit) {
+    private List<Record> getRecordsFromChildNodes(Node node, String collected, int limit) {
         var limitAtomic = new AtomicInteger(limit);
-        var result = new ArrayList<String>();
+        var result = new ArrayList<Record>();
 
         node.getAllChildNodes().forEach((k, v) -> {
             if (limitAtomic.get() <= 0) {
@@ -131,7 +134,8 @@ public class Trie {
             }
 
             if (v.isStringEnding()) {
-                result.add(collected + v.getChar());
+                var record = new Record(collected + v.getChar(), v.getValue());
+                result.add(record);
                 limitAtomic.decrementAndGet();
             }
 
@@ -181,6 +185,7 @@ public class Trie {
         } else {
             if (str.length() == 1) {
                 node.setStringEnding(false);
+                node.setValue(null);
             }
             return false;
         }

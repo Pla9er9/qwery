@@ -14,7 +14,7 @@ public class ApplicationController {
     }
 
     @GetMapping("records/search")
-    public String[] search(
+    public Record[] search(
             @RequestParam String value,
             @RequestParam(required = false, defaultValue = "10") int limit) {
 
@@ -22,13 +22,13 @@ public class ApplicationController {
     }
 
     @PostMapping("records")
-    public String addRecord(@RequestParam String value) {
-        trie.add(value);
-        return value;
+    public Record addRecord(@RequestParam String key, @RequestBody NewRecordRequest recordRequest) {
+        trie.add(key, recordRequest.value());
+        return new Record(key, recordRequest.value());
     }
 
     @DeleteMapping("records/v/{value}")
-    public String deleteRecord(@PathVariable String value) {
+    public void deleteRecord(@PathVariable String value) {
         var result = trie.search(value, 1);
         var found = result.length == 1;
 
@@ -37,12 +37,10 @@ public class ApplicationController {
         }
 
         trie.delete(value);
-
-        return result[0];
     }
 
     @GetMapping("records/all")
-    public String[] getAllRecords() {
+    public Record[] getAllRecords() {
         return trie.getAll();
     }
 

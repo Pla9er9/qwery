@@ -7,11 +7,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Node {
 
     private final char char_;
+    private Object value;
     private boolean isStringEnding;
     private final Map<Character, Node> nodes;
 
-    public Node(char char_, boolean isStringEnding) {
+    public Node(char char_, Object value, boolean isStringEnding) {
         this.char_ = char_;
+        this.value = value;
         this.isStringEnding = isStringEnding;
         this.nodes = new ConcurrentHashMap<>();
     }
@@ -46,5 +48,13 @@ public class Node {
 
     public boolean isStringEnding() {
         return isStringEnding;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
     }
 }

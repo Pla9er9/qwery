@@ -13,10 +13,10 @@ public class TrieIntegrationTest {
         Arrays.sort(strings);
 
         for (String str : strings) {
-            trie.add(str);
+            trie.add(str, null);
         }
 
-        String[] result = trie.getAll();
+        String[] result = recordsToKeys(trie.getAll());
         Arrays.sort(result);
 
         Assertions.assertArrayEquals(strings, result);
@@ -28,10 +28,10 @@ public class TrieIntegrationTest {
         String[] strings = new String[]{"item1", "item2"};
 
         for (String str : strings) {
-            trie.add(str);
+            trie.add(str, null);
         }
 
-        var result = trie.search("item", 2);
+        var result = recordsToKeys(trie.search("item", 2));
 
         Assertions.assertArrayEquals(strings, result);
     }
@@ -43,10 +43,10 @@ public class TrieIntegrationTest {
         Arrays.sort(strings);
 
         for (String str : strings) {
-            trie.add(str);
+            trie.add(str, null);
         }
 
-        var result = trie.search("a", 100);
+        var result = recordsToKeys(trie.search("a", 100));
         Arrays.sort(result);
 
         Assertions.assertArrayEquals(strings, result);
@@ -59,7 +59,7 @@ public class TrieIntegrationTest {
         Arrays.sort(strings);
 
         for (String str : strings) {
-            trie.add(str);
+            trie.add(str, null);
         }
 
         for (int limit = 0; limit < strings.length; limit++) {
@@ -74,13 +74,13 @@ public class TrieIntegrationTest {
         String[] strings = new String[]{"item1", "item2"};
 
         for (String str : strings) {
-            trie.add(str);
+            trie.add(str, null);
         }
 
-        trie.add("item3");
+        trie.add("item3", null);
         trie.delete("item3");
 
-        String[] result = trie.getAll();
+        String[] result = recordsToKeys(trie.getAll());
         Arrays.sort(result);
 
         Assertions.assertArrayEquals(strings, result);
@@ -92,12 +92,16 @@ public class TrieIntegrationTest {
         String[] strings = new String[]{"item1", "item2", "item3"};
 
         for (String str : strings) {
-            trie.add(str);
+            trie.add(str, null);
         }
 
         trie.deleteAll();
-        String[] result = trie.getAll();
+        String[] result = recordsToKeys(trie.getAll());
 
         Assertions.assertEquals(0, result.length);
+    }
+
+    private String[] recordsToKeys(Record[] records) {
+        return Arrays.stream(records).map(Record::key).toArray(String[]::new);
     }
 }
