@@ -83,7 +83,13 @@ public class Trie {
         }
 
         var char_ = str.charAt(0);
+        char_ = Character.toUpperCase(char_);
         var node = this.roots.get(char_);
+        if (node == null) {
+            char_ = Character.toLowerCase(char_);
+            node = this.roots.get(char_);
+        }
+
         if (node == null) {
             return new Record[]{};
         }

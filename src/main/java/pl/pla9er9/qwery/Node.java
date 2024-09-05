@@ -30,7 +30,10 @@ public class Node {
     }
 
     public Optional<Node> getChildNodeByChar(char char_) {
-        var node = this.nodes.get(char_);
+        var node = this.nodes.get(Character.toUpperCase(char_));
+        if (node == null) {
+            node = this.nodes.get(Character.toLowerCase(char_));
+        }
         return Optional.ofNullable(node);
     }
 
